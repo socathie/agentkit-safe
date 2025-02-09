@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@coinbase/agentkit": "^0.1.2",
-    "viem": "^2.22.22"
+    "viem": "^2.22.22",
+    "@safe-global/api-kit": "^2.5.8",
+    "@safe-global/protocol-kit": "^5.2.1"
   }
 }
