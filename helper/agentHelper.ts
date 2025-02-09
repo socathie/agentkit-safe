@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, custom, http } from "viem";
+import { createPublicClient, createWalletClient, custom, http, WalletClient } from "viem";
 import { Address } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import Safe, { getSafeAddressFromDeploymentTx } from "@safe-global/protocol-kit";
@@ -19,7 +19,7 @@ const apiKit = new SafeApiKit({
 });
 
 // forward standard eip1193 methods to CDP Wallet Provider
-const transformTransport = (cdpProvider: CdpWalletProvider) => {
+export const transformTransport = (cdpProvider: CdpWalletProvider) => {
   const transport = custom({
     async request({ method, params }) {
       if (method === "eth_sendTransaction") {
@@ -53,7 +53,7 @@ export const createSafeFromAgent = async (agentAccount: CdpWalletProvider, emplo
     predictedSafe: {
       safeAccountConfig: {
         owners: [employerAddress, employeeAddress, agentAddress],
-        threshold: 1,
+        threshold: 2,
       },
     },
   });
@@ -82,12 +82,11 @@ export const createSafeFromAgent = async (agentAccount: CdpWalletProvider, emplo
   return safeAddress;
 };
 
-// get / create the safe clients
-export const getDeployedSafeClient = async (safeAddress: Address, signer: Address) => {
+export const getDeployedSafeClient = async (safeAddress: Address, signer: WalletClient) => {
   const safeClient = await Safe.init({
-    provider: RPC_URL,
+    provider: signer.transport,
     safeAddress: safeAddress,
-    signer: signer,
+    signer: (await signer.requestAddresses())[0],
   });
 
   if (!(await safeClient.isSafeDeployed())) {
@@ -96,8 +95,6 @@ export const getDeployedSafeClient = async (safeAddress: Address, signer: Addres
 
   return safeClient;
 };
-
-// we should have another way to provide actions to CDP agent kit instead
 
 // approve a transaction to the safe (safeclient needs to be deployed safe)
 export const approveWithdrawTransaction = async (safeClient: Safe) => {
